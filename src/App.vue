@@ -91,11 +91,12 @@
           {{ sel.name }} - USD
         </h3>
         <div class="flex items-end border-gray-600 border-b border-l h-64">
-          <div 
-          v-for="(bar, i) in normalizeGraph()"
-          :key="i"
-          :style="{ height:`${bar}%` }"
-          class="bg-purple-800 border w-10 h-24"></div>       
+          <div
+            v-for="(bar, i) in normalizeGraph()"
+            :key="i"
+            :style="{ height: `${bar}%` }"
+            class="bg-purple-800 border w-10 h-24"
+          ></div>
         </div>
         <button
           @click="sel = null"
@@ -186,4 +187,3 @@ export default {
 };
 </script>
 
-<style src="./app.css"></style>
