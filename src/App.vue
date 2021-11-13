@@ -1,5 +1,31 @@
 <template>
   <div class="container mx-auto flex flex-col items-center bg-gray-100 p-4">
+    <div
+      v-if="!tickerList.length"
+      class="fixed w-100 h-100 opacity-80 bg-purple-800 inset-0 z-50 flex items-center justify-center"
+    >
+      <svg
+        class="animate-spin -ml-1 mr-3 h-12 w-12 text-white"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          class="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          stroke-width="4"
+        ></circle>
+        <path
+          class="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+        ></path>
+      </svg>
+    </div>
+
     <div class="container">
       <div class="w-full my-4"></div>
       <section>
@@ -12,12 +38,31 @@
               <input
                 v-model="ticker"
                 @keydown.enter="add"
+                @input="handleInput"
                 type="text"
                 name="wallet"
                 id="wallet"
                 class="block w-full pr-10 border-gray-300 text-gray-900 focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm rounded-md"
                 placeholder="Например DOGE"
               />
+            </div>
+            <div
+              v-if="autocompleteList.length"
+              class="flex bg-white shadow-md p-1 rounded-md shadow-md flex-wrap"
+            >
+              <template v-for="(ticker, i) in autocompleteList">
+                <span
+                  v-if="i < 4"
+                  :key="i"
+                  @click="autocomplete(ticker)"
+                  class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
+                >
+                  {{ ticker }}
+                </span>
+              </template>
+            </div>
+            <div v-if="error" class="text-sm text-red-600">
+              Такой тикер уже добавлен
             </div>
           </div>
         </div>
@@ -136,15 +181,55 @@ export default {
 
   data() {
     return {
-      ticker: "default",
+      ticker: "",
       tickers: [],
       graph: [],
-      sel: null
+      sel: null,
+      tickerList: [],
+      autocompleteList: [],
+      error: false
     };
   },
 
+  created: function() {
+    setTimeout(() => {
+      this.setTickerList();
+    }, 1000);
+  },
+
   methods: {
+    autocomplete(ticker) {
+      this.ticker = ticker;
+      this.add();
+    },
+
+    handleInput() {
+      this.error = false;
+      if (this.ticker === "") {
+        this.autocompleteList = [];
+      } else {
+        this.autocompleteList = this.tickerList.filter(t => {
+          if (t.toUpperCase().includes(this.ticker.toUpperCase())) return t;
+        });
+      }
+    },
+    setTickerList() {
+      fetch(`https://min-api.cryptocompare.com/data/all/coinlist?summary=true`)
+        .then(response => response.json())
+        .then(response => {
+          this.tickerList = Object.keys(response.Data);
+        });
+    },
+
     add() {
+      if (this.tickers.find(t => t.name === this.ticker)) {
+        this.error = true;
+        return;
+      } else {
+        this.error = false;
+        this.autocompleteList = [];
+      }
+
       const newTicker = {
         name: this.ticker,
         price: "-"
@@ -186,4 +271,3 @@ export default {
   }
 };
 </script>
-
