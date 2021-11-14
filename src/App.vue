@@ -195,9 +195,32 @@ export default {
     setTimeout(() => {
       this.setTickerList();
     }, 1000);
+
+    const tickersData = localStorage.getItem("cryptonomicon-list");
+    if (tickersData) {
+      this.tickers = JSON.parse(tickersData);
+      this.tickers.forEach(ticker => {
+        this.subscribeToUpdates(ticker.name);
+      });
+    }
   },
 
   methods: {
+    subscribeToUpdates(tickerName) {
+      setInterval(async () => {
+        const f = await fetch(
+          `https://min-api.cryptocompare.com/data/price?fsym=${tickerName}&tsyms=USD&api_key=5ee49f669c83916ffe960a68640e5c4812f4d8ceac618f85cdf03cb66e54b1a1`
+        );
+        const data = await f.json();
+        this.tickers.find(t => t.name === tickerName).price =
+          data.USD > 1 ? data.USD.toFixed(2) : data.USD.toPrecision(2);
+
+        if (this.sel?.name === tickerName) {
+          this.graph.push(data.USD);
+        }
+      }, 10000);
+    },
+
     autocomplete(ticker) {
       this.ticker = ticker;
       this.add();
@@ -213,6 +236,7 @@ export default {
         });
       }
     },
+
     setTickerList() {
       fetch(`https://min-api.cryptocompare.com/data/all/coinlist?summary=true`)
         .then(response => response.json())
@@ -238,18 +262,9 @@ export default {
       this.tickers.push(newTicker);
       this.ticker = "";
 
-      setInterval(async () => {
-        const f = await fetch(
-          `https://min-api.cryptocompare.com/data/price?fsym=${newTicker.name}&tsyms=USD&api_key=5ee49f669c83916ffe960a68640e5c4812f4d8ceac618f85cdf03cb66e54b1a1`
-        );
-        const data = await f.json();
-        this.tickers.find(t => t.name === newTicker.name).price =
-          data.USD > 1 ? data.USD.toFixed(2) : data.USD.toPrecision(2);
+      localStorage.setItem("cryptonomicon-list", JSON.stringify(this.tickers));
 
-        if (this.sel?.name === newTicker.name) {
-          this.graph.push(data.USD);
-        }
-      }, 10000);
+      this.subscribeToUpdates(newTicker.name);
     },
 
     handleDelete(tickerToRemove) {
