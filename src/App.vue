@@ -194,7 +194,7 @@
 </template>
 
 <script>
-import { loadTicker } from "./api";
+import { subscribeToTicker, unsubscribeFromTicker } from "./api";
 
 export default {
   name: "App",
@@ -221,17 +221,21 @@ export default {
     if (windowData.filter) this.filter = windowData.filter;
 
     if (windowData.page) this.page = windowData.page;
-    /*
+
     setTimeout(() => {
       this.setTickerList();
     }, 1000);
-*/
+
     const tickersData = localStorage.getItem("cryptonomicon-list");
     if (tickersData) {
       this.tickers = JSON.parse(tickersData);
-    }
 
-    setInterval(this.updateTickers, 5000);
+      this.tickers.forEach(ticker => {
+        subscribeToTicker(ticker.name, newPrice =>
+          this.updateTicker(ticker.name, newPrice)
+        );
+      });
+    }
   },
 
   computed: {
@@ -274,20 +278,17 @@ export default {
   },
 
   methods: {
+    updateTicker(tickerName, price) {
+      this.tickers
+        .filter(t => t.name === tickerName)
+        .forEach(t => {
+          t.price = price;
+        });
+    },
+
     formatPrice(price) {
       if (price === "-") return price;
       return price > 1 ? price.toFixed(2) : price.toPrecision(2);
-    },
-
-    async updateTickers() {
-      if (!this.tickers.length) return;
-
-      const exchangeData = await loadTicker(this.tickers.map(t => t.name));
-      console.log(exchangeData);
-      this.tickers.forEach(ticker => {
-        const price = exchangeData[ticker.name.toUpperCase()];
-        ticker.price = price ?? "-";
-      });
     },
 
     autocomplete(ticker) {
@@ -307,17 +308,15 @@ export default {
     },
 
     setTickerList() {
-      /*
       fetch(`https://min-api.cryptocompare.com/data/all/coinlist?summary=true`)
         .then(response => response.json())
         .then(response => {
           this.tickerList = Object.keys(response.Data);
         });
-        */
     },
 
     add() {
-      if (this.tickers.find(t => t.name === this.ticker)) {
+      if (this.tickers.find(t => t.name === this.ticker.toUpperCase())) {
         this.error = true;
         return;
       } else {
@@ -328,17 +327,23 @@ export default {
       this.filter = "";
 
       const newTicker = {
-        name: this.ticker,
+        name: this.ticker.toUpperCase(),
         price: "-"
       };
 
       this.tickers = [...this.tickers, newTicker];
+
+      subscribeToTicker(newTicker.name, newPrice =>
+        this.updateTicker(newTicker.name, newPrice)
+      );
+
       this.ticker = "";
     },
 
     handleDelete(tickerToRemove) {
       this.tickers = this.tickers.filter(t => t !== tickerToRemove);
       if (this.selectedTicker === tickerToRemove) this.selectedTicker = null;
+      unsubscribeFromTicker(tickerToRemove.name);
     },
 
     select(t) {
