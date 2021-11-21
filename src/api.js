@@ -8,14 +8,30 @@ const socket = new WebSocket(
 
 const AGGREGATE_INDEX = "5";
 
+const CROSS_CURRENCY = "BTC";
+
+let CROSS_CURRENCY_PRICE = 0;
+
 socket.addEventListener("message", e => {
-  const { TYPE: type, FROMSYMBOL: currency, PRICE: newPrice } = JSON.parse(
-    e.data
-  );
+  let {
+    TYPE: type,
+    FROMSYMBOL: currency,
+    PRICE: newPrice,
+    MESSAGE: message
+  } = JSON.parse(e.data);
+
+  if (currency === CROSS_CURRENCY) {
+    CROSS_CURRENCY_PRICE = newPrice;
+  }
+
   if (type !== AGGREGATE_INDEX || newPrice === undefined) return;
 
+  if (currency !== CROSS_CURRENCY) {
+    newPrice = newPrice * CROSS_CURRENCY_PRICE;
+  }
+
   const handlers = tickersHandlers.get(currency) ?? [];
-  handlers.forEach(fn => fn(newPrice));
+  handlers.forEach(fn => fn(newPrice, message !== "INVALID_SUB"));
 });
 
 const sendToWebSocket = message => {
@@ -37,19 +53,21 @@ const sendToWebSocket = message => {
   );
 };
 
-const subscribeToTickerOnWs = ticker => {
+const subscribeToTickerOnWs = (ticker, currency = "BTC") => {
   sendToWebSocket({
     action: "SubAdd",
-    subs: [`5~CCCAGG~${ticker}~USD`]
+    subs: [`5~CCCAGG~${ticker}~${currency}`]
   });
 };
 
 const unsubscribeToTickerOnWs = ticker => {
   sendToWebSocket({
     action: "SubRemove",
-    subs: [`5~CCCAGG~${ticker}~USD`]
+    subs: [`5~CCCAGG~${ticker}~BTC`]
   });
 };
+
+subscribeToTickerOnWs(CROSS_CURRENCY, "USD");
 
 export const subscribeToTicker = (ticker, cb) => {
   const subscribers = tickersHandlers.get(ticker) || [];

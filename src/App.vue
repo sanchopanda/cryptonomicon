@@ -1,6 +1,5 @@
 <template>
   <div class="container mx-auto flex flex-col items-center bg-gray-100 p-4">
-    <!--
     <div
       v-if="!tickerList.length"
       class="fixed w-100 h-100 opacity-80 bg-purple-800 inset-0 z-50 flex items-center justify-center"
@@ -26,7 +25,7 @@
         ></path>
       </svg>
     </div>
--->
+
     <div class="container">
       <div class="w-full my-4"></div>
       <section>
@@ -114,9 +113,11 @@
             :key="t.name"
             @click="select(t)"
             :class="{
-              'border-4': selectedTicker === t
+              'border-4': selectedTicker === t,
+              'bg-white': t.isExist,
+              'bg-red-100': !t.isExist
             }"
-            class="bg-white overflow-hidden shadow rounded-lg border-purple-800 border-solid cursor-pointer"
+            class="overflow-hidden shadow rounded-lg border-purple-800 border-solid cursor-pointer"
           >
             <div class="px-4 py-5 sm:p-6 text-center">
               <dt class="text-sm font-medium text-gray-500 truncate">
@@ -231,8 +232,8 @@ export default {
       this.tickers = JSON.parse(tickersData);
 
       this.tickers.forEach(ticker => {
-        subscribeToTicker(ticker.name, newPrice =>
-          this.updateTicker(ticker.name, newPrice)
+        subscribeToTicker(ticker.name, (newPrice, isExist) =>
+          this.updateTicker(ticker.name, newPrice, isExist)
         );
       });
     }
@@ -278,7 +279,7 @@ export default {
   },
 
   methods: {
-    updateTicker(tickerName, price) {
+    updateTicker(tickerName, price, isExist) {
       this.tickers
         .filter(t => t.name === tickerName)
         .forEach(t => {
@@ -286,6 +287,7 @@ export default {
             this.graph.push(price);
           }
           t.price = price;
+          t.isExist = isExist;
         });
     },
 
@@ -336,8 +338,8 @@ export default {
 
       this.tickers = [...this.tickers, newTicker];
 
-      subscribeToTicker(newTicker.name, newPrice =>
-        this.updateTicker(newTicker.name, newPrice)
+      subscribeToTicker(newTicker.name, (newPrice, isExist) =>
+        this.updateTicker(newTicker.name, newPrice, isExist)
       );
 
       this.ticker = "";
