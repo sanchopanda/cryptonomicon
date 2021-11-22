@@ -154,11 +154,17 @@
         <h3 class="text-lg leading-6 font-medium text-gray-900 my-8">
           {{ selectedTicker.name }} - USD
         </h3>
-        <div class="flex items-end border-gray-600 border-b border-l h-64">
+        <div
+          class="flex items-end border-gray-600 border-b border-l h-64"
+          ref="graph"
+        >
           <div
             v-for="(bar, i) in normalizedGraph"
             :key="i"
-            :style="{ height: `${bar}%` }"
+            :style="{
+              height: `${bar}%`,
+              width: `${barWidth}px`
+            }"
             class="bg-purple-800 border w-10 h-24"
           ></div>
         </div>
@@ -210,7 +216,8 @@ export default {
       autocompleteList: [],
       error: false,
       page: 1,
-      filter: ""
+      filter: "",
+      barWidth: "25"
     };
   },
 
@@ -237,6 +244,14 @@ export default {
         );
       });
     }
+  },
+
+  mounted: function() {
+    window.addEventListener("resize", this.calculateMaxGrapEl);
+  },
+
+  beforeUnmount: function() {
+    window.addEventListener("resize", this.calculateMaxGrapEl);
   },
 
   computed: {
@@ -279,12 +294,21 @@ export default {
   },
 
   methods: {
+    calculateMaxGrapEl() {
+      if (!this.$refs.graph) return;
+      while (this.graph.length > this.$refs.graph.clientWidth / this.barWidth) {
+        this.graph.shift();
+      }
+      console.log(this.$refs.bar.clientWidth);
+    },
+
     updateTicker(tickerName, price, isExist) {
       this.tickers
         .filter(t => t.name === tickerName)
         .forEach(t => {
           if (t === this.selectedTicker) {
             this.graph.push(price);
+            this.calculateMaxGrapEl();
           }
           t.price = price;
           t.isExist = isExist;
