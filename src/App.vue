@@ -207,7 +207,7 @@ export default {
   name: "App",
 
   data() {
-    return {
+    return {        
       ticker: "",
       tickers: [],
       graph: [],
@@ -217,7 +217,8 @@ export default {
       error: false,
       page: 1,
       filter: "",
-      barWidth: "25"
+      barWidth: "25",
+      maxGraphElements: 1,
     };
   },
 
@@ -230,9 +231,8 @@ export default {
 
     if (windowData.page) this.page = windowData.page;
 
-    setTimeout(() => {
-      this.setTickerList();
-    }, 1000);
+         this.setTickerList();
+
 
     const tickersData = localStorage.getItem("cryptonomicon-list");
     if (tickersData) {
@@ -251,7 +251,7 @@ export default {
   },
 
   beforeUnmount: function() {
-    window.addEventListener("resize", this.calculateMaxGrapEl);
+    window.removeEventListener("resize", this.calculateMaxGrapEl);
   },
 
   computed: {
@@ -296,10 +296,8 @@ export default {
   methods: {
     calculateMaxGrapEl() {
       if (!this.$refs.graph) return;
-      while (this.graph.length > this.$refs.graph.clientWidth / this.barWidth) {
-        this.graph.shift();
-      }
-      console.log(this.$refs.bar.clientWidth);
+
+      this.maxGraphElements = this.$refs.graph.clientWidth / this.barWidth;     
     },
 
     updateTicker(tickerName, price, isExist) {
@@ -307,8 +305,10 @@ export default {
         .filter(t => t.name === tickerName)
         .forEach(t => {
           if (t === this.selectedTicker) {
-            this.graph.push(price);
-            this.calculateMaxGrapEl();
+             this.graph.push(price);
+            while (this.graph.length > this.maxGraphElements) {
+              this.graph.shift();
+            }
           }
           t.price = price;
           t.isExist = isExist;
