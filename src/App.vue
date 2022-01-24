@@ -231,8 +231,7 @@ export default {
 
     if (windowData.page) this.page = windowData.page;
 
-         this.setTickerList();
-
+    this.setTickerList();
 
     const tickersData = localStorage.getItem("cryptonomicon-list");
     if (tickersData) {
@@ -387,6 +386,8 @@ export default {
 
     selectedTicker() {
       this.graph = [];
+      this.$nextTick(this.calculateMaxGrapEl);
+
     },
 
     paginatedTickers() {
