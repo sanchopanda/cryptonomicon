@@ -17,30 +17,30 @@
             placeholder="Например DOGE"
           />
         </div>
-        <!-- <div
-              v-if="autocompleteList.length"
-              class="flex bg-white shadow-md p-1 rounded-md shadow-md flex-wrap"
+        <div
+          v-if="autocompleteList.length"
+          class="flex bg-white shadow-md p-1 rounded-md shadow-md flex-wrap"
+        >
+          <template v-for="(ticker, i) in autocompleteList">
+            <span
+              v-if="i < 4"
+              :key="i"
+              @click="autocomplete(ticker)"
+              class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
             >
-              <template v-for="(ticker, i) in autocompleteList">
-                <span
-                  v-if="i < 4"
-                  :key="i"
-                  @click="autocomplete(ticker)"
-                  class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
-                >
-                  {{ ticker }}
-                </span>
-              </template>
-            </div>
-            <div v-if="error" class="text-sm text-red-600">
-              Такой тикер уже добавлен
-            </div> -->
+              {{ ticker }}
+            </span>
+          </template>
+        </div>
+        <div v-if="error" class="text-sm text-red-600">
+          Такой тикер уже добавлен
+        </div>
       </div>
     </div>
     <button
       @click="add"
       type="button"
-      :disabled="disabled"
+      :disabled="tooManyTickers"
       class="my-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
       :class="{
         'opacity-50': disabled
@@ -71,6 +71,14 @@ export default {
       type: Boolean,
       required: false,
       default: false
+    }, 
+    tickerList: {
+      type: Array,
+      required: true
+    },
+    tickers: {
+      type: Array,
+      required: true
     }
   },
   emits: {
@@ -78,13 +86,41 @@ export default {
   },
   data() {
     return {
-      ticker: ""
+      ticker: "",
+      autocompleteList: [],
+      error: false
     };
   },
   methods: {
     add() {
-      this.$emit("add-ticker", this.ticker);
-      this.ticker = "";
+       if (this.tickers.find(t => t.name === this.ticker.toUpperCase())) {
+        this.error = true;
+        return;
+      } else {
+        this.error = false;
+        this.autocompleteList = [];
+         this.$emit("add-ticker", this.ticker);
+        this.ticker = "";
+      }     
+    },
+    handleInput() {
+      this.error = false;
+      if (this.ticker === "") {
+        this.autocompleteList = [];
+      } else {
+        this.autocompleteList = this.tickerList.filter(t => {
+          if (t.toUpperCase().includes(this.ticker.toUpperCase())) return t;
+        });
+      }
+    },
+     autocomplete(ticker) {
+      this.ticker = ticker;
+      this.add();
+    },
+  },
+  computed: {
+     tooManyTickers() {
+      return this.tickers.length > 4;
     }
   }
 };

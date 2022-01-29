@@ -28,7 +28,11 @@
 
     <div class="container">
       <div class="w-full my-4"></div>
-      <add-ticker @add-ticker="add" :disabled="tooManyTickers" />
+      <add-ticker @add-ticker="add" 
+      :disabled="tooManyTickers"
+      :error = "error"
+      :tickerList = "tickerList"
+      :tickers = "tickers" />
 
       <template v-if="tickers.length">
         <div>
@@ -160,8 +164,6 @@ export default {
       graph: [],
       selectedTicker: null,
       tickerList: [],
-      autocompleteList: [],
-      error: false,
       page: 1,
       filter: "",
       barWidth: "25",
@@ -200,10 +202,7 @@ export default {
     window.removeEventListener("resize", this.calculateMaxGrapEl);
   },
 
-  computed: {
-    tooManyTickers() {
-      return this.tickers.length > 4;
-    },
+  computed: {   
 
     startIndex() {
       return (this.page - 1) * 6;
@@ -268,23 +267,7 @@ export default {
     formatPrice(price) {
       if (price === "-") return price;
       return price > 1 ? price.toFixed(2) : price.toPrecision(2);
-    },
-
-    autocomplete(ticker) {
-      this.ticker = ticker;
-      this.add();
-    },
-
-    // handleInput() {
-    //   this.error = false;
-    //   if (this.ticker === "") {
-    //     this.autocompleteList = [];
-    //   } else {
-    //     this.autocompleteList = this.tickerList.filter(t => {
-    //       if (t.toUpperCase().includes(this.ticker.toUpperCase())) return t;
-    //     });
-    //   }
-    // },
+    },  
 
     setTickerList() {
       fetch(`https://min-api.cryptocompare.com/data/all/coinlist?summary=true`)
@@ -295,13 +278,6 @@ export default {
     },
 
     add(ticker) {
-      // if (this.tickers.find(t => t.name === this.ticker.toUpperCase())) {
-      //   this.error = true;
-      //   return;
-      // } else {
-      //   this.error = false;
-      //   this.autocompleteList = [];
-      // }
 
       this.filter = "";
 
