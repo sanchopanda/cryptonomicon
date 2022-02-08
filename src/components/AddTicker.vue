@@ -71,56 +71,36 @@ export default {
       type: Boolean,
       required: false,
       default: false
-    }, 
-    tickerList: {
-      type: Array,
-      required: true
     },
-    tickers: {
-      type: Array,
-      required: true
+    error: {
+      type: Boolean,
+      required: false,
+      default: false
+    },
+    autocompleteList: {
+      type: Array
     }
   },
   emits: {
-    "add-ticker": value => typeof value === "string"
+    "add-ticker": value => typeof value === "string",
+    "ticker-input": value => typeof value === "string"
   },
   data() {
     return {
-      ticker: "",
-      autocompleteList: [],
-      error: false
+      ticker: ""
     };
   },
   methods: {
     add() {
-       if (this.tickers.find(t => t.name === this.ticker.toUpperCase())) {
-        this.error = true;
-        return;
-      } else {
-        this.error = false;
-        this.autocompleteList = [];
-         this.$emit("add-ticker", this.ticker);
-        this.ticker = "";
-      }     
+      this.$emit("add-ticker", this.ticker);
     },
     handleInput() {
-      this.error = false;
-      if (this.ticker === "") {
-        this.autocompleteList = [];
-      } else {
-        this.autocompleteList = this.tickerList.filter(t => {
-          if (t.toUpperCase().includes(this.ticker.toUpperCase())) return t;
-        });
-      }
+      console.log("sdg");
+      this.$emit("ticker-input", this.ticker);
     },
-     autocomplete(ticker) {
+    autocomplete(ticker) {
       this.ticker = ticker;
       this.add();
-    },
-  },
-  computed: {
-     tooManyTickers() {
-      return this.tickers.length > 4;
     }
   }
 };

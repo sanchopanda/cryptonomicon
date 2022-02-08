@@ -28,17 +28,18 @@
 
     <div class="container">
       <div class="w-full my-4"></div>
-      <add-ticker @add-ticker="add" 
-      :disabled="tooManyTickers"
-      :error = "error"
-      :tickerList = "tickerList"
-      :tickers = "tickers" />
+      <add-ticker
+        @add-ticker="add"
+        @ticker-input="handleInput"
+        :disabled="tooManyTickers"
+        :error="error"
+        :autocompleteList="autocompleteList"
+      />
 
       <template v-if="tickers.length">
         <div>
           <button
             class="my-4 mx-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-            
             v-if="page > 1"
             @click="page = page - 1"
           >
@@ -167,7 +168,9 @@ export default {
       page: 1,
       filter: "",
       barWidth: "25",
-      maxGraphElements: 1
+      maxGraphElements: 1,
+      autocompleteList: [],
+      error: false
     };
   },
 
@@ -202,8 +205,7 @@ export default {
     window.removeEventListener("resize", this.calculateMaxGrapEl);
   },
 
-  computed: {   
-
+  computed: {
     startIndex() {
       return (this.page - 1) * 6;
     },
@@ -239,6 +241,10 @@ export default {
         page: this.page,
         filter: this.filter
       };
+    },
+
+    tooManyTickers() {
+      return this.tickers.length > 4;
     }
   },
 
@@ -267,7 +273,7 @@ export default {
     formatPrice(price) {
       if (price === "-") return price;
       return price > 1 ? price.toFixed(2) : price.toPrecision(2);
-    },  
+    },
 
     setTickerList() {
       fetch(`https://min-api.cryptocompare.com/data/all/coinlist?summary=true`)
@@ -277,7 +283,22 @@ export default {
         });
     },
 
+    handleInput(ticker) {
+      this.error = false;
+      if (ticker === "") {
+        this.autocompleteList = [];
+      } else {
+        this.autocompleteList = this.tickerList.filter(t => {
+          if (t.toUpperCase().includes(ticker.toUpperCase())) return t;
+        });
+      }
+    },
+
     add(ticker) {
+      if (this.tickers.find(t => t.name === ticker.toUpperCase())) {
+        this.error = true;
+        return;
+      }
 
       this.filter = "";
 
@@ -291,6 +312,9 @@ export default {
       subscribeToTicker(newTicker.name, (newPrice, isExist) =>
         this.updateTicker(newTicker.name, newPrice, isExist)
       );
+
+      this.error = false;
+      this.autocompleteList = [];
     },
 
     handleDelete(tickerToRemove) {
